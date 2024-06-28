@@ -17,7 +17,11 @@ let slideshowTimer;
 startGameButton.addEventListener('click', () => {
     startGameButton.style.display = 'none';
     loadingMessage.style.display = 'block';
-    playOpeningSlideshow();
+    if (isMobileDevice()) {
+        playOpeningSlideshow();
+    } else {
+        playOpeningVideo();
+    }
 });
 
 restartGameButton.addEventListener('click', () => {
@@ -61,18 +65,24 @@ function playOpeningSlideshow() {
     }, 8000);
 }
 
-function startGame() {
-    gameRunning = true;
+function playOpeningVideo() {
+    openingSlideshow.style.display = 'none';
+    endingVideo.style.display = 'none';
+    backgroundMusic.currentTime = 0;
     backgroundMusic.play();
-    spawnAliens();
-    handlePlayerMovement();
-
-    // Start ending video after 8 seconds if game is not restarted
+    loadingMessage.style.display = 'none';
     setTimeout(() => {
         if (!gameRunning) {
             playEndingVideo();
         }
     }, 8000);
+}
+
+function startGame() {
+    gameRunning = true;
+    backgroundMusic.play();
+    spawnAliens();
+    handlePlayerMovement();
 }
 
 function endGame() {
@@ -83,11 +93,9 @@ function endGame() {
     scoreDisplay.style.fontSize = '36px';
     scoreDisplay.style.backgroundColor = 'orange';
 
-    // Show ending video and restart button after 8 seconds
     setTimeout(() => {
         if (!gameRunning) {
             playEndingVideo();
-            restartGameButton.style.display = 'block';
         }
     }, 8000);
 }
@@ -96,6 +104,7 @@ function playEndingVideo() {
     gameRunning = false;
     endingVideo.style.display = 'block';
     endingVideo.play();
+    restartGameButton.style.display = 'block';
     endingVideo.addEventListener('ended', () => {
         endingVideo.style.display = 'none';
         restartGameButton.style.display = 'block';
@@ -108,8 +117,7 @@ function spawnAliens() {
             const alien = document.createElement('div');
             alien.className = 'alien';
             alien.style.top = '0px';
-            const randomLeft = Math.random() * (window.innerWidth - 150); // Random left position
-            alien.style.left = randomLeft + 'px';
+            alien.style.left = Math.random() * (window.innerWidth - 150) + 'px';
             gameContainer.appendChild(alien);
             aliens.push(alien);
 
@@ -147,14 +155,15 @@ function shoot(event) {
     if (gameRunning) {
         const bullet = document.createElement('div');
         bullet.className = 'bullet';
-        bullet.style.left = (player.offsetLeft + player.offsetWidth / 2 - 15) + 'px'; // Adjusted for leftward shooting
-        bullet.style.top = (player.offsetTop + player.offsetHeight - 20) + 'px'; // Adjusted for bottom shooting
+        bullet.style.left = (player.offsetLeft + player.offsetWidth / 2 - 5) + 'px';
+        bullet.style.bottom = '150px';
         gameContainer.appendChild(bullet);
         bullets.push(bullet);
 
         const moveBullet = setInterval(() => {
-            bullet.style.top = (parseInt(bullet.style.top) - 5) + 'px'; // Adjusted for upward movement
-            if (parseInt(bullet.style.top) < 0) {
+            bullet.style.bottom = (parseInt(bullet.style.bottom) + 10) + 'px'; // Changed from 5px to 10px
+            bullet.style.left = (parseInt(bullet.style.left) - 10) + 'px'; // Added to move bullets left
+            if (parseInt(bullet.style.bottom) > window.innerHeight) {
                 clearInterval(moveBullet);
                 bullet.remove();
                 bullets = bullets.filter(b => b !== bullet);
@@ -182,8 +191,8 @@ function createExplosion(alien) {
     explosion.style.height = '150px';
     explosion.style.backgroundImage = "url('explosion.gif')";
     explosion.style.backgroundSize = 'cover';
-    explosion.style.left = (parseInt(alien.style.left) + alien.offsetWidth / 2 - 75) + 'px'; // Adjusted for center explosion
-    explosion.style.top = (parseInt(alien.style.top) + alien.offsetHeight / 2 - 75) + 'px'; // Adjusted for center explosion
+    explosion.style.left = alien.style.left;
+    explosion.style.top = alien.style.top;
     gameContainer.appendChild(explosion);
 
     setTimeout(() => {
@@ -215,4 +224,8 @@ function increaseScore() {
 function handleCollision() {
     gameRunning = false;
     endGame();
+}
+
+function isMobileDevice() {
+    return window.matchMedia('(max-aspect-ratio: 9/16)').matches;
 }
